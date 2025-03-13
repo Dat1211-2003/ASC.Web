@@ -20,19 +20,26 @@ var builder = WebApplication.CreateBuilder(args);
 //builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
 //    .AddEntityFrameworkStores<ApplicationDbContext>();
 
-builder.Services.AddOptions();
+
+
+
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
 throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
+
+
 builder.Services.AddIdentity<IdentityUser, IdentityRole>((options) =>
 {
     options.User.RequireUniqueEmail = true;
 }).AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
 builder.Services.AddScoped<DbContext, ApplicationDbContext>();
+
+
+builder.Services.AddOptions();
 builder.Services.Configure<ApplicationSettings>(builder.Configuration.GetSection("AppSettings"));
 
-builder.Services.AddControllersWithViews();
+
 
 
 builder.Services.AddTransient<IEmailSender, AuthMessageSender>();
@@ -41,7 +48,15 @@ builder.Services.AddTransient<ISmsSender, AuthMessageSender>();
 builder.Services.AddSingleton<IIdentitySeed, IdentitySeed>();
 builder.Services.AddScoped<UnitOfwork, UnitOfwork>();
 
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession();
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
 builder.Services.AddRazorPages();
+builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+builder.Services.AddControllersWithViews();
+
+
 
 
 var app = builder.Build();
@@ -69,6 +84,7 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapRazorPages();
+app.UseSession();
 
 using (var scope = app.Services.CreateScope())
 {
